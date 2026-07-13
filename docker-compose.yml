@@ -1,0 +1,78 @@
+services:
+  # для демонстрации и работы с обученной моделью (cli/api/web) но ограничение до 10мб файл в webui
+  # также не поддерживает probability и avg_logprob
+  whisper-service:
+    build:
+      context: ./whisper_service  # путь к папке с исходниками
+      dockerfile: Dockerfile
+    env_file:
+      - ./whisper_service/.env.service
+    container_name: whisper-service
+    restart: unless-stopped
+    ports: 
+      - "7860:7860" # пробрасываем порт для графического интерфейса
+      - "8000:8000" # для API сервера (пусть будет)
+    devices:
+      - /dev/kfd
+      - /dev/dri
+    group_add: # добавляем в группу для получения прав доступа к GPU
+      - video
+    volumes: 
+      - ./workspace/models:/workspace/models # прокидываем модели
+      - ./workspace/audio:/workspace/audio
+      - ./workspace/transcripts:/app/transcripts # прокидываем папку, куда сохраняются результаты обработки по умолчанию к нашей папке в workspace
+      - ./workspace/transcripts_srt:/app/transcripts-srt # папка для srt
+      - ./whisper_service/.cache/whisper:/root/.cache/whisper # кеш для работы whisper
+      - ./whisper_service/.cache/huggingface:/root/.cache/huggingface # кеш модели, чтобы не скачивать заново при перезапуске контейнера
+      # Кеш для PDM и pip, чтобы не скачивать пакеты заново
+      - ./whisper_service/.cache/pdm:/root/.cache/pdm
+      - ./whisper_service/.cache/pip:/root/.cache/pip
+
+
+  # для транскрибации исходников, роль учителя 
+  # через api, есть web, но ограничение на файл 25мб
+  whisper-cpp:
+    build:
+      context: ./whisper_cpp
+    env_file:
+      - ./whisper_cpp/.env.cpp
+    container_name: whisper-cpp
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    devices:
+      - /dev/kfd:/dev/kfd
+      - /dev/dri:/dev/dri
+    group_add:
+      - video
+    volumes:
+      - whisper_build:/app/whisper.cpp/build # будет лежатть готовый билд проекта 
+      - ./whisper_cpp/models:/models # папка со скаченными моделями
+      - ./workspace/transcripts:/app/transcripts
+
+  # для обучения и выполнения python скриптов
+  dev:
+    build: ./dev_environment # путь к Dockerfile
+    image: dev-rocm:latest
+    container_name: development
+    devices: # доступ к GPU для обучения
+      - /dev/kfd
+      - /dev/dri
+      # доступ к аудиоустройству
+      - /dev/snd:/dev/snd
+    group_add:
+      - video
+    volumes:
+      - ./workspace:/workspace
+      - ./scripts:/scripts # монтируем папку со скриптами
+      - ./dev_environment/.cache/pip:/root/.cache/pip
+      - /dev/shm:/dev/shm
+    environment:
+      - ALSA_CARD=0
+    command: tail -f /dev/null # не дает сразу завершиться
+    network_mode: host
+
+
+volumes:
+  whisper_build: # именованный том для хранения сборки
+    

@@ -1,0 +1,31 @@
+# Бинарные файлы (общее правило)
+*.bin
+
+# Аудиофайлы (если вдруг появятся вне папок)
+*.wav
+*.mp3
+*.ogg
+*.flac
+
+# Папки с большими данными, которые не должны попадать в репозиторий
+workspace/audio/
+workspace/datasets/
+workspace/transcripts/
+workspace/transcripts_srt/
+workspace/models/
+
+# Кеши 
+**/.cache/
+
+# Сторонний репозиторий 
+whisper_service/insanely-fast-whisper-rocm
+
+# бинарник для решения сигнатуры при скачивании видео
+dev_environment/deno_binary/deno-x86_64-unknown-linux-gnu
+
+# Дополнительные крупные файлы, которые могут появиться
+*.arrow
+
+# .env файлы
+whisper_service/.env.service
+whisper_cpp/.env.cpp

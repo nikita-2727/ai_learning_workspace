@@ -1,0 +1,2 @@
+# ai_learning_workspace
+The project includes scripts for preparing the dataset, verifying it, and converting it to the hugging face format. whisper.cpp and insanely-fast-whisper-rocm with cli/web/api interfaces to demonstrate the operation of a custom model.  The data sources have been saved for clarity, and a Makefile has been written for interaction.

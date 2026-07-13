@@ -1,0 +1,8 @@
+dataset_name: whisper_prep_dataset
+format: jsonl
+language: ru
+num_proc: 4
+out_folder_base: /workspace/datasets
+source_audio_dir: /workspace/audio
+source_transcript_dir: /workspace/transcripts_srt
+split_name: train
