@@ -1,11 +1,15 @@
 import json
 import csv
 import os
+import sys
 import pygame
 import threading
 from pathlib import Path
 from prompt_toolkit import prompt
+from prompt_toolkit import PromptSession
+from prompt_toolkit.document import Document
 from prompt_toolkit.key_binding import KeyBindings
+from prompt_toolkit.styles import Style
 
 # === НАСТРОЙКИ ===
 CSV_FILE = "/workspace/metadata/chunk_manual_verification.csv"  # ваш CSV с проблемными чанками
@@ -45,16 +49,42 @@ def editor_with_playback(initial_text, audio_path):
     def replay(event):
         start_playback()
 
+    # Назначаем Enter как выход из редактора
+    @bindings.add('enter')
+    def finish(event):
+        # Получаем текущий буфер и завершаем приложение с его текстом
+        buffer = event.app.current_buffer
+        event.app.exit(result=buffer.text)
+
     # Запускаем первое воспроизведение
     start_playback()
 
+
+    # Подавляем вывод ALSA (и любых других сообщений)
+    # Перенаправляем настоящий stderr (файловый дескриптор 2) в /dev/null
+    devnull_fd = os.open(os.devnull, os.O_WRONLY)
+    saved_stderr_fd = os.dup(2)
+    os.dup2(devnull_fd, 2)
+    os.close(devnull_fd)
+
+    # Стиль, чтобы убрать возможное визуальное наложение
+    style = Style.from_dict({
+        '': '',  # сброс всех стилей
+    })
+
     # Запускаем редактор (многострочный, чтобы видеть весь текст)
-    new_text = prompt(
-        "Редактируйте текст (Ctrl+R – повторить аудио, Enter – сохранить): ",
-        default=initial_text,
-        key_bindings=bindings,
-        multiline=True  # удобнее для длинных транскрипций
-    )
+    try:
+        new_text = prompt(
+            "Редактируйте текст (Ctrl+R – повторить аудио, Enter – сохранить):\n\n",
+            default=Document(initial_text, cursor_position=0),  # курсор в начало
+            key_bindings=bindings,
+            multiline=True,
+            enable_history_search=False,
+        )
+    finally:
+        # Восстанавливаем stderr
+        os.dup2(saved_stderr_fd, 2)
+        os.close(saved_stderr_fd)
 
     # Останавливаем воспроизведение после выхода из редактора
     if play_thread and play_thread.is_alive():
@@ -93,8 +123,9 @@ def main():
 
         print("\n" + "="*60)
         print(f"Чанк index={idx}, тип={row['type']}, avg_prob={row['avg_prob']}")
-        print("Текущий текст:")
+        print("Текущий текст:\n")
         print(orig_text)
+        print("\n\n")
 
         if not os.path.exists(audio_path):
             print(f"==== MISTAKE!!! ==== Аудиофайл не найден: {audio_path}")
@@ -105,6 +136,7 @@ def main():
             new_text = editor_with_playback(orig_text, audio_path)
 
         rec["text"] = ' '.join(new_text.split())  # удаляем лишние пробелы
+        rec["human_verified"] = True
         print("✅ Текст сохранён.")
 
     # Сохраняем JSONL

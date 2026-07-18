@@ -19,7 +19,8 @@ RUN pip install --no-cache-dir \
     soundfile \
     git+https://github.com/i4Ds/whisper-prep.git \
     prompt_toolkit \
-    pygame
+    pygame \
+    huggingface_hub
 
 # Установка Deno для решения n-сигнатуры YouTube
 COPY deno_binary/deno-x86_64-unknown-linux-gnu/deno /usr/local/bin/deno

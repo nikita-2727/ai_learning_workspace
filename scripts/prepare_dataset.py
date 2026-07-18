@@ -474,7 +474,7 @@ def prepare_hf_dataset(splits: dict, output_dir: str):
 
             # Обновляем путь в чанке
             chunk_copy = chunk.copy()
-            chunk_copy["audio"] = str(new_audio_path.relative_to(hf_dir))
+            chunk_copy["audio"] = str(new_audio_path.relative_to(split_dir))
 
             # добавляем обновленный чанк в массив и обновляем счетчик для аудио
             new_chunks.append(chunk_copy)
@@ -524,7 +524,8 @@ def main():
             # создаем объект с метаданными о чанке
             chunks.append({
                 "audio": audio_path,
-                "text": line["text"],
+                "text": whisper_result["text"],
+                "text_ts": line["text"],
                 "avg_prob": avg_prob,
                 "index": idx
             })
@@ -542,6 +543,18 @@ def main():
     # делаем независимо от транскрибации, чтобы можно было корректировать сортировку по типам без повторной транскрибации
     for chunk in chunks:
         chunk['type'] = classify_chunk(chunk['text'])
+        chunk["human_verified"] = False
+
+
+    # убираем лишние пробелы и знаки переноса
+    for chunk in chunks:
+        text = chunk["text"]
+        text = text.replace('\n', '')
+        while '  ' in text:
+            text = text.replace('  ', ' ')
+        text = text.strip()
+
+        chunk["text"] = text
 
 
     
@@ -581,14 +594,16 @@ def main():
 
     with open(CSV_PATH, 'w', newline='', encoding='utf-8') as f:
         writer = csv.writer(f)
-        writer.writerow(["index", "audio", "avg_prob", "type", "text"])
+        writer.writerow(["index", "audio", "avg_prob", "type", "text", "text_ts", "human_verified"])
         for chunk in selected_sorted:
             writer.writerow([
                 chunk["index"],
                 chunk["audio"],
                 chunk["avg_prob"],
                 chunk["type"],
-                chunk["text"]
+                chunk["text"],
+                chunk["text_ts"],
+                chunk["human_verified"]
             ])
     print(f"==== Генерация завершена ==== сохранено в {CSV_PATH}")
 
@@ -611,14 +626,16 @@ def main():
 
     with open(MANUAL_PATH, 'w', newline='', encoding='utf-8') as f:
         writer = csv.writer(f)
-        writer.writerow(["index", "audio", "avg_prob", "type", "text"])
+        writer.writerow(["index", "audio", "avg_prob", "type", "text", "text_ts", "human_verified"])
         for chunk in low_confidence:
             writer.writerow([
                 chunk["index"],
                 chunk["audio"],
                 chunk["avg_prob"],
                 chunk["type"],
-                chunk["text"]
+                chunk["text"],
+                chunk["text_ts"],
+                chunk["human_verified"]
             ])
     print(f"==== Генерация завершена ==== сохранено в {MANUAL_PATH}")
 

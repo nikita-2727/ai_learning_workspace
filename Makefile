@@ -15,13 +15,13 @@ restart: stop up
 
 
 # транскрибация
-whisper_cli: # не поддерживает probability и confidence
+whisper-cli: # не поддерживает probability и confidence
 	./whisper_service/start_cli.sh
 
-whisper_api:
+whisper-api:
 	./whisper_service/start_api.sh
 
-whisper_cpp: # полный вывод
+whisper-cpp: # полный вывод
 	./whisper_cpp/start_api.sh
 
 
@@ -81,18 +81,23 @@ dataset-validate:
 	python scripts/fix_problem_chunks.py
 
 
+# логинимся на hf
+token=???
+
+hf-login:
+	docker exec -ti development hf auth login --token $(token)
 
 # загружает модель в hf
 dataset-upload:
 	docker exec -it development \
-	huggingface-cli upload your-username/oil_and_gas_speech /workspace/datasets/oil_and_gas_ready_dataset \
+	hf upload N07P/oil_and_gas_speech /workspace/datasets/oil_and_gas_ready_dataset \
 	--repo-type dataset --commit-message "Initial dataset upload"
 
 # обновляет определенные файлы в модели на hf
 new_path=new_metadata.jsonl
 
 dataset-edit:
-	huggingface-cli upload your-username/oil_and_gas_speech $(new_path) train/metadata.jsonl --repo-type dataset
+	hf upload N07P/oil_and_gas_speech $(new_path) train/metadata.jsonl --repo-type dataset
 
 
 # не зависимо от папок с таким же именем, цели будут выполняться

@@ -50,25 +50,23 @@ services:
       - ./whisper_cpp/models:/models # папка со скаченными моделями
       - ./workspace/transcripts:/app/transcripts
 
-  # для обучения и выполнения python скриптов
+  # для выполнения python скриптов
   dev:
     build: ./dev_environment # путь к Dockerfile
     image: dev-rocm:latest
     container_name: development
-    devices: # доступ к GPU для обучения
-      - /dev/kfd
-      - /dev/dri
+    devices:
       # доступ к аудиоустройству
       - /dev/snd:/dev/snd
     group_add:
-      - video
+      - audio
     volumes:
       - ./workspace:/workspace
       - ./scripts:/scripts # монтируем папку со скриптами
       - ./dev_environment/.cache/pip:/root/.cache/pip
-      - /dev/shm:/dev/shm
+      - /dev/shm:/dev/shm # может понадобится для аудио
     environment:
-      - ALSA_CARD=0
+      - ALSA_CARD=1 # выбираем используемую аудиокарту
     command: tail -f /dev/null # не дает сразу завершиться
     network_mode: host
 

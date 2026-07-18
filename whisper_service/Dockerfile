@@ -20,6 +20,11 @@ ARG REPO_URL=https://github.com/beecave-homelab/insanely-fast-whisper-rocm.git
 ARG BRANCH=main
 RUN git clone --depth 1 --branch ${BRANCH} ${REPO_URL} /app
 
+# Автоматически исправляем баг в коде: заменяем dtype= на правильный torch_dtype=
+RUN sed -i 's/dtype=torch\.float16/torch_dtype=torch.float16/g' /app/insanely_fast_whisper_rocm/core/asr_backend.py
+RUN sed -i 's/dtype=torch\.bfloat16/torch_dtype=torch.bfloat16/g' /app/insanely_fast_whisper_rocm/core/asr_backend.py
+
+
 # Устанавливаем зависимости через PDM 
 RUN pdm install --no-editable --prod --no-self
 
