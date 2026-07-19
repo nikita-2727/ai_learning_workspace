@@ -1,4 +1,7 @@
-FILENAME="Методы подсчета запасов нефти и газа. Объёмный метод. КИН.wav"
+FILENAME="4bvskQiMpbE.wav"
+
+# docker exec -ti whisper-service \
+# pdm run python -m insanely_fast_whisper_rocm.api
 
 curl -X POST http://localhost:8000/v1/audio/transcriptions \
   -H "Content-Type: multipart/form-data" \
